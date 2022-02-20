@@ -1,0 +1,16 @@
+<odoo>
+  <data>
+    <record id="product_extend_export_tree" model="ir.ui.view">
+      <field name="name">product.extend.export.tree</field>
+      <field name="model">product.template</field>
+      <field name="inherit_id" ref="product.product_template_tree_view" />
+      <field name="arch" type="xml">
+       <xpath expr="//tree" position="inside">
+          <header>
+            <button name="export_to_woocommerce" string="Export" type="object" class="oe_highlight"/>  
+          </header>
+       </xpath>
+      </field>
+    </record>
+  </data>
+</odoo>
