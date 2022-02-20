@@ -1,27 +1,12 @@
 # -*- coding: utf-8 -*-
+import json
+import requests
+import base64
 from odoo import http
 from odoo import models
 from woocommerce import API
-import json
+from odoo.addons.woocommerce_integration.models.tools import wcapi
 
-# LOCAL DATA(TEST)
-LOCAL_KEY = "ck_04c7be916fe8a2cfc9a1d114a1896c4f9c5d2f62"
-LOCAL_SECRET = "cs_63c03d4df8e7d03e0f9b49d19488295157c14403"
-LOCAL_URL = "http://localhost/wordpress/"
-
-# SERVER DATA
-SERVER_KEY = "ck_da9d1afb7938fbc35035dbfaa9289dc681d4e208"
-SERVER_SECRET = "cs_7e6a337cbafbefdc58d4f33449549371cbe2060a"
-SERVER_URL = "http://argemtshop.com"
-
-# conexión con la API
-
-wcapi = API(
-    url=LOCAL_URL,
-    consumer_key=LOCAL_KEY,
-    consumer_secret=LOCAL_SECRET,
-    version="wc/v3"
-)
 
 
 class OdooController(http.Controller):
@@ -72,7 +57,9 @@ class OdooController(http.Controller):
 
     @http.route('/odoo_controller/odoo_controller/example_products', auth='public')
     def example_product(self, **kw):
-        last_product = wcapi.get("products").json()[0]
+        response = wcapi.get("products").json()
+        print(response)
+        last_product = response[0]
         html_list = "<ul>\n"
         for key, value in last_product.items():
             html_list += "<li>" +  str(key) + ": " + str(value) + "</li>\n"
@@ -141,5 +128,40 @@ class OdooController(http.Controller):
             'status': 'OK',
             'code': 200
         }
+
+    @http.route('/odoo_controller/odoo_controller/send_image', auth='public')
+    def send_image(self, **kw):
+        product = http.request.env['product.product'].search([('default_code', '=', 'E-COM09')])
+        image = product.image_1920
+        url = "https://argemtshop.com/wp-json/wp/v2/posts"
+        user = "argemt08"
+        password = "JPSs unNz FFRj yghP 9MJc l5PG"
+        credentials = user + ':' + password
+        token = base64.b64encode(credentials.encode())
+        header = {'Authorization': 'Basic ' + token.decode('utf-8')}
+
+        
+
+        # response = requests.get(url , headers=header)
+        # print(response)
+        return "Imagen creada"
+
+    @http.route('/odoo_controller/odoo_controller/import_product_test/', auth='public')
+    def import_product_test(self, **kw):    
+        data_product = {
+            "name": "Producto prueba 1",
+            "regular_price": "200",
+            "description": "Pruebita",
+            "images": [
+                {
+                    "src": "https://i.pinimg.com/564x/cc/1b/28/cc1b2803113900bea8a67f4e553bdf6e.jpg"
+                }
+            ]
+        }
+        print(wcapi.post("products", data_product).json())        
+        return "<h2>Los productos se han importado exitosamente</h2>"
+
+
+        
 
 
