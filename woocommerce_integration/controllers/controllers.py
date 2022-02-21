@@ -112,8 +112,12 @@ class OdooController(http.Controller):
         # crear objeto con la orden
         order_data = {
             "partner_id": current_partner.id,
-            "order_line": sku_list
+            "order_line": sku_list,
+            "wc_customer_id": last_order["customer_id"],
+            "wc_number": last_order["number"],
+            "wc_order_key": last_order["order_key"]
         }
+
         print("Crear orden")
         http.request.env['sale.order'].create(order_data)
         print("Orden creada")
