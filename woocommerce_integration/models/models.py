@@ -22,7 +22,7 @@ class product_template_export(models.Model):
         # crear el producto en woocommerce cuando se crea en odoo
         # primero crear en odoo
         templates = super(product_template_export, self).create(vals_list)
-        for template in templates:
+        for template in self:
             # para cada producto, revisar si este se encuentra conectado a woocommerce
             if template.is_wc_connect:
                 # crear el producto en woocommerce
@@ -39,21 +39,23 @@ class product_template_export(models.Model):
         # en caso de que si esté contectado con woocommerce,
         # se actualiza también ahí
         print("Preguntar si el producto está conectado con woocommerce")
-        if self.is_wc_connect:
-            print("Preguntar si el producto está tiene id de woocommerce")
-            if self.wc_id:
-                print("Actualizar producto en woocommerce")
-                # en caso de que tenga un id de woocommerce, es porque
-                # ya existe en woocommerce, entonces se hace un PUT
-                if not update_wc_product(self):
-                    raise AccessError(_("Error en la actualización del producto, es posible que exista un problema de conexión con woocommerce"))
-            else:
-                print("Crear producto en woocommerce")
-                # como el producto aún no está en woocommerce, se crea
-                if not create_wc_product(self):
-                    raise AccessError(_("Error en la creación del producto, es posible que exista un problema de conexión con woocommerce"))
-                    # producto NO creado con exito
-                    print("Error en la creación del producto") 
+        for template in self:
+            if template.is_wc_connect:
+                print("Preguntar si el producto está tiene id de woocommerce")
+                print(template.wc_id)
+                if template.wc_id:
+                    print("Actualizar producto en woocommerce")
+                    # en caso de que tenga un id de woocommerce, es porque
+                    # ya existe en woocommerce, entonces se hace un PUT
+                    if not update_wc_product(template):
+                        raise AccessError(_("Error en la actualización del producto, es posible que exista un problema de conexión con woocommerce"))
+                else:
+                    print("Crear producto en woocommerce")
+                    # como el producto aún no está en woocommerce, se crea
+                    if not create_wc_product(template):
+                        raise AccessError(_("Error en la creación del producto, es posible que exista un problema de conexión con woocommerce"))
+                        # producto NO creado con exito
+                        print("Error en la creación del producto") 
         return res
 
     def unlink(self):

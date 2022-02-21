@@ -12,7 +12,8 @@ from odoo.addons.woocommerce_integration.models.tools import wcapi
 class OdooController(http.Controller):
     @http.route('/odoo_controller/odoo_controller/', auth='public')
     def index(self, **kw):
-        return "fuciona"
+        print("PRINT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!...")
+        return "fuciona 1"
 
     @http.route('/odoo_controller/odoo_controller/import_products_test/', auth='public')
     def import_products_test(self, **kw):    
@@ -79,6 +80,8 @@ class OdooController(http.Controller):
             "email": billing["email"]
         }
         bd_partner = http.request.env['res.partner']
+
+        
         # revisar si el cliente existe en la base de datos (correo)
         print("Buscar cliente")
         current_partner = bd_partner.search([('email', '=', partner['email'])])
@@ -115,6 +118,7 @@ class OdooController(http.Controller):
         http.request.env['sale.order'].create(order_data)
         print("Orden creada")
         # eliminar orden woomerce
+        
         return "<h2>Orden creada exitosamente</h2>"
 
     @http.route('/odoo_controller/odoo_controller/order_created', type="json", auth='public', methods=['POST'])
