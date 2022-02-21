@@ -197,9 +197,6 @@ class OdooController(http.Controller):
         credentials = user + ':' + password
         token = base64.b64encode(credentials.encode())
         header = {'Authorization': 'Basic ' + token.decode('utf-8')}
-
-        
-
         # response = requests.get(url , headers=header)
         # print(response)
         return "Imagen creada"

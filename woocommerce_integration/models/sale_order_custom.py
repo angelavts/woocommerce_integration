@@ -22,7 +22,6 @@ class SaleOrderCustom(models.Model):
         res = super(SaleOrderCustom, self).action_confirm()
         for order in self:
             if order.wc_order_id:
-                print(order.wc_order_key)
                 print("Actualizar orden en woocommerce")
                 data = {
                     "status": "completed"
