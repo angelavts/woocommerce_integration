@@ -7,21 +7,21 @@ from woocommerce import API
 from odoo import api
 from odoo.addons.woocommerce_integration.models.tools import wcapi
 
-class product_template_export(models.Model):
+class ProductTemplate(models.Model):
     _inherit = 'product.template'
 
     # campos agregados
     is_wc_connect = fields.Boolean(string="Connect to Woocommerce", default=False)
     wc_id = fields.Integer()
     wc_permalink = fields.Char(string='Permalink')
-    wc_img_link = fields.Char(string='Woocommerce Image ')
+    wc_img_link = fields.Char(string='Woocommerce Image')
     
 
     @api.model_create_multi
     def create(self, vals_list):
         # crear el producto en woocommerce cuando se crea en odoo
         # primero crear en odoo
-        templates = super(product_template_export, self).create(vals_list)
+        templates = super(ProductTemplate, self).create(vals_list)
         for template in self:
             # para cada producto, revisar si este se encuentra conectado a woocommerce
             if template.is_wc_connect:
@@ -35,7 +35,7 @@ class product_template_export(models.Model):
 
     def write(self, vals):
         # actualizar el producto en odoo
-        res = super(product_template_export, self).write(vals)
+        res = super(ProductTemplate, self).write(vals)
         # en caso de que si esté contectado con woocommerce,
         # se actualiza también ahí
         print("Preguntar si el producto está conectado con woocommerce")
@@ -63,7 +63,7 @@ class product_template_export(models.Model):
         # eliminar producto de woocommerce
         is_wc_connect = self.is_wc_connect
         wc_id = self.wc_id
-        res = super(product_template_export, self).unlink()
+        res = super(ProductTemplate, self).unlink()
         if is_wc_connect and wc_id:
             print("ELIMINARRRRRRRRRR")
             try:
@@ -98,7 +98,10 @@ class product_template_export(models.Model):
 def create_wc_product(product, ignoreDataStatus=False):
 
     data_product = get_data(product)
-    print(data_product)
+    # indicar que se debe manejar el stock
+    data_product["manage_stock"] = "true"
+    # inficar la cantidad de productos
+    data_product["stock_quantity"] = product.qty_available
     # insertar la imagen en caso de que la tenga
     if product.wc_img_link:
         data_product["images"] = [
@@ -137,7 +140,7 @@ def update_wc_product(product):
 
     data_product = get_data(product)
     print(data_product)
-    # realizar la petición post para incluir producto
+    # realizar la petición put para modificar producto
     try:
         response = wcapi.put('products/%s' % product.wc_id, data_product).json()      
     except:

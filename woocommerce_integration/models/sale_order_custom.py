@@ -7,27 +7,28 @@ from woocommerce import API
 from odoo import api
 from odoo.addons.woocommerce_integration.models.tools import wcapi
 
-class sale_order_custom(models.Model):
+class SaleOrderCustom(models.Model):
     _inherit = 'sale.order'
 
     # campos agregados
-    # Id del usuario en woocommerce
-    wc_customer_id = fields.Integer()
+    # Id de la orden en woocommerce
+    wc_order_id = fields.Integer()
+    # numero de orden en woocommerce
     wc_number = fields.Char(string='Order Number')
-    wc_order_key = fields.Char(string='Order Key')
+
 
     def action_confirm(self):
-        res = super(sale_order_custom, self).action_confirm()
-        print("SE ACABA DE CONFIRMAR UNA ORDEN!!!!")
+        # acción que se realiza al confirmar un presupuesto
+        res = super(SaleOrderCustom, self).action_confirm()
         for order in self:
-            if order.wc_order_key:
+            if order.wc_order_id:
                 print(order.wc_order_key)
                 print("Actualizar orden en woocommerce")
                 data = {
                     "status": "completed"
                 }
                 try:
-                    response = wcapi.put('orders/%s' % order.wc_number, data).json()      
+                    response = wcapi.put('orders/%s' % order.wc_order_id, data).json()      
                 except:
                     # posible error de conexión
                     response = False

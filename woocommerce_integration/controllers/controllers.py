@@ -8,7 +8,6 @@ from woocommerce import API
 from odoo.addons.woocommerce_integration.models.tools import wcapi
 
 
-
 class OdooController(http.Controller):
     @http.route('/odoo_controller/odoo_controller/', auth='public')
     def index(self, **kw):
@@ -113,9 +112,8 @@ class OdooController(http.Controller):
         order_data = {
             "partner_id": current_partner.id,
             "order_line": sku_list,
-            "wc_customer_id": last_order["customer_id"],
-            "wc_number": last_order["number"],
-            "wc_order_key": last_order["order_key"]
+            "wc_order_id": last_order["id"],
+            "wc_number": last_order["number"]
         }
 
         print("Crear orden")
@@ -125,8 +123,58 @@ class OdooController(http.Controller):
         
         return "<h2>Orden creada exitosamente</h2>"
 
-    @http.route('/odoo_controller/odoo_controller/order_created', type="json", auth='public', methods=['POST'])
+    @http.route('/odoo_controller/odoo_controller/order_created', type="json", auth='my_api_key', methods=['POST'])
     def order_created(self, **kw):
+        last_order = wcapi.get("orders").json()[0]
+        # extraer los datos del cliente
+        # Recordar: rebajar stock
+        billing = last_order["billing"]
+        partner = {
+            "name": billing["first_name"] + " " + billing["last_name"],
+            "phone": billing["phone"],
+            "email": billing["email"]
+        }
+        bd_partner = http.request.env['res.partner']
+
+        
+        # revisar si el cliente existe en la base de datos (correo)
+        print("Buscar cliente")
+        current_partner = bd_partner.search([('email', '=', partner['email'])])
+        if not current_partner:
+            print("No encontró al cliente, crear")
+            # no existe el cliente, crear
+            print(bd_partner.create(partner))
+            # buscar el cliente a partir del correo
+            current_partner = bd_partner.search([('email', '=', partner['email'])])
+            print("Cliente creado")
+            
+
+        sku_list = []
+        # extraer datos de productos
+        # construir lista de objetos
+        i = 0
+        print("Crear lista de productos")
+        # si da tiempo, verificar que no se cree  otra orden similar
+        for wc_product in last_order["line_items"]:
+            order_line = {
+                "product_id": http.request.env['product.product'].search([('default_code', '=', wc_product["sku"])])[0].id,
+                "product_uom_qty": wc_product["quantity"]
+            }
+            # agregar una tupla con los datos de la orden_line
+            sku_list.append((i, False, order_line))
+            i += 0
+        print("Lista creada")
+        # crear objeto con la orden
+        order_data = {
+            "partner_id": current_partner.id,
+            "order_line": sku_list,
+            "wc_order_id": int(last_order["id"]),
+            "wc_number": last_order["number"]
+        }
+
+        print("Crear orden")
+        http.request.env['sale.order'].create(order_data)
+        print("Orden creada")
         print("AN ORDER HAS BEEN CREATED!") 
         response = http.request.jsonrequest
         print(response)
