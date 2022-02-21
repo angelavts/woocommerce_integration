@@ -123,11 +123,13 @@ class OdooController(http.Controller):
         response = http.request.jsonrequest
         print(response)
         print("READY") 
-        return {
+        appDict = {
             'success': True,
             'status': 'OK',
             'code': 200
         }
+
+        return json.dumps(appDict)
 
     @http.route('/odoo_controller/odoo_controller/send_image', auth='public')
     def send_image(self, **kw):
