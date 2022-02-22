@@ -19,9 +19,8 @@ class SaleOrderCustom(models.Model):
         res = super(SaleOrderCustom, self).action_confirm()
         for order in self:
             if order.wc_order_id:
-                print("Actualizar orden en woocommerce")
                 data = {
-                    "status": "completed"
+                    'status': 'completed'
                 }
                 response = do_request('PUT', 'orders', data, order.wc_order_id)              
         return res

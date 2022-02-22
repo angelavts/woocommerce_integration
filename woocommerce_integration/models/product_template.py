@@ -11,7 +11,7 @@ class ProductTemplate(models.Model):
     _inherit = 'product.template'
 
     # campos agregados
-    is_wc_connect = fields.Boolean(string="Connect to Woocommerce", default=False)
+    is_wc_connect = fields.Boolean(string='Connect to Woocommerce', default=False)
     wc_id = fields.Integer()
     wc_permalink = fields.Char(string='Permalink')
     wc_img_link = fields.Char(string='Woocommerce Image')
@@ -27,9 +27,8 @@ class ProductTemplate(models.Model):
             if template.is_wc_connect:
                 # crear el producto en woocommerce
                 if not template.create_wc_product():
-                    raise AccessError(_("Error en la creación del producto, es posible que exista un problema de conexión con woocommerce"))
                     # producto NO creado con exito
-                    print("Error en la creación del producto") 
+                    raise AccessError(_('Error en la creación del producto, es posible que exista un problema de conexión con woocommerce'))              
         return templates
 
 
@@ -38,57 +37,51 @@ class ProductTemplate(models.Model):
         res = super(ProductTemplate, self).write(vals)
         # en caso de que si esté contectado con woocommerce,
         # se actualiza también ahí
-        print("Preguntar si el producto está conectado con woocommerce")
         for template in self:
             if template.is_wc_connect:
-                print("Preguntar si el producto está tiene id de woocommerce")
-                print(template.wc_id)
                 if template.wc_id:
-                    print("Actualizar producto en woocommerce")
                     # en caso de que tenga un id de woocommerce, es porque
                     # ya existe en woocommerce, entonces se hace un PUT
                     response = do_request('PUT', 'products', template.get_data(), template.wc_id)
                     if not response:
-                        raise AccessError(_("Error en la actualización del producto, es posible que exista un problema de conexión con woocommerce"))
+                        raise AccessError(_('Error en la actualización del producto, es posible que exista un problema de conexión con woocommerce'))
                 else:
-                    print("Crear producto en woocommerce")
                     # como el producto aún no está en woocommerce, se crea
                     if not template.create_wc_product():
-                        raise AccessError(_("Error en la creación del producto, es posible que exista un problema de conexión con woocommerce"))
                         # producto NO creado con exito
-                        print("Error en la creación del producto") 
+                        raise AccessError(_('Error en la creación del producto, es posible que exista un problema de conexión con woocommerce'))
+                        
         return res
 
     def unlink(self):
-        print("ELIMINAR DE WOOCOMMERCEEEE")
         # eliminar producto de woocommerce
         is_wc_connect = self.is_wc_connect
         wc_id = self.wc_id
         res = super(ProductTemplate, self).unlink()
         if is_wc_connect and wc_id:
-            print("ELIMINARRRRRRRRRR")
             do_request('DELETE', 'products', wc_id=wc_id)      
         return res
 
     def get_data(self):
         # armar estructura con los datos requeridos por woocommerce
         data_product = {
-            "name": str(self.name),
-            "regular_price": str(self.list_price),
-            "description": str(self.description),
+            'name': str(self.name),
+            'regular_price': str(self.list_price),
+            'description': str(self.description),
             'type': 'simple',
-            "sku": str(self.default_code) 
+            'sku': str(self.default_code),
+            'categories': [{'id': self.categ_id.wc_id}]
         }     
         return data_product
 
     def export_to_woocommerce(self):
+        # exportar todos los productos a woocommerce
         updatedProducts = 0
         productList = self.env['product.template'].search([])
         productList.search([], order='create_date', limit=10)
         for product in productList:
             if product.create_wc_product(True):
                 updatedProducts += 1
-        print(str(updatedProducts) + 'exportados con éxito')
         return {'warning': {
                 'title': _('Productos exportados'),
                 'message': _(str(updatedProducts) + ' exportados con éxito.')
@@ -96,17 +89,16 @@ class ProductTemplate(models.Model):
 
 
     def create_wc_product(self, ignoreDataStatus=False):
-
         data_product = self.get_data()
         # indicar que se debe manejar el stock
-        data_product["manage_stock"] = "true"
+        data_product['manage_stock'] = 'true'
         # inficar la cantidad de productos
-        data_product["stock_quantity"] = self.qty_available
+        data_product['stock_quantity'] = self.qty_available
         # insertar la imagen en caso de que la tenga
         if self.wc_img_link:
-            data_product["images"] = [
+            data_product['images'] = [
                 {
-                    "src": self.wc_img_link 
+                    'src': self.wc_img_link 
                 }
             ]
         # realizar la petición post para incluir producto
@@ -120,7 +112,7 @@ class ProductTemplate(models.Model):
             images = response.get('images')
             if images:
                 self.write({
-                            'wc_img_link': images[0]["src"],
+                            'wc_img_link': images[0]['src'],
                         })
                 
         return response
