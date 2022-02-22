@@ -7,7 +7,8 @@
       <field name="arch" type="xml">
        <xpath expr="//tree" position="inside">
           <header>
-            <button name="export_to_woocommerce" string="Export" type="object" class="oe_highlight"/>  
+            <button name="export_to_woocommerce" string="Export" type="object" class="oe_highlight"/>
+            <button name="import_to_odoo" string="Import" type="object" class="oe_highlight"/>  
           </header>
        </xpath>
       </field>

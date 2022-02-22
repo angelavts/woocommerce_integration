@@ -13,9 +13,9 @@ SERVER_URL = "http://argemtshop.com"
 # conexión con la API
 
 wcapi = API(
-    url=LOCAL_URL,
-    consumer_key=LOCAL_KEY,
-    consumer_secret=LOCAL_SECRET,
+    url=SERVER_URL,
+    consumer_key=SERVER_KEY,
+    consumer_secret=SERVER_SECRET,
     version="wc/v3"
 )
 
@@ -28,11 +28,17 @@ def do_request(request_name, wc_object, data=None, wc_id=""):
         elif request_name == 'PUT':
             response = wcapi.put('{}/{}'.format(wc_object, wc_id), data).json() 
         elif request_name == 'DELETE':            
-            response = wcapi.delete('{}/{}'.format(wc_object, wc_id), params={'force': True}).json()      
+            response = wcapi.delete('{}/{}'.format(wc_object, wc_id), params={'force': True}).json()   
+        elif request_name == 'GET':
+            response = wcapi.get(wc_object).json()   
     except:
         # posible error de conexión
         response = False
     if response:
+
+        if isinstance(response, list):
+            return response
+
         # revisar si existe data en la respuesta, lo cual
         # es una posible indicación de error  
         data = response.get('data')

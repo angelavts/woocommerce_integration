@@ -84,7 +84,7 @@ class ProductTemplate(models.Model):
     def export_to_woocommerce(self):
         updatedProducts = 0
         productList = self.env['product.template'].search([])
-        productList.search([], order='create_date', limit=10)
+        productList.search([('wc_id', '!=', 0)])
         for product in productList:
             if product.create_wc_product(True):
                 updatedProducts += 1
@@ -92,6 +92,33 @@ class ProductTemplate(models.Model):
         return {'warning': {
                 'title': _('Productos exportados'),
                 'message': _(str(updatedProducts) + ' exportados con éxito.')
+            }}
+
+
+    def import_to_odoo(self):
+        importedProducts = 0
+
+        response =  do_request('GET', 'products')
+        db_products = self.env['product.template'].search([])
+        db_wc_ids = []
+
+        for product in db_products:
+            db_wc_ids.append(product.wc_id)
+        
+        print(db_wc_ids)
+
+        wc_products_filtered = filter(lambda product: id not in db_wc_ids, response)
+        
+        products_to_import = []
+        for product in wc_products_filtered:
+            products_to_import.append(self.create_odoo_product(product))
+            importedProducts += 1
+
+        super(ProductTemplate, self).create(products_to_import)
+        print(str(importedProducts) + 'importados con éxito')
+        return {'warning': {
+                'title': _('Productos importados'),
+                'message': _(str(importedProducts) + ' importados con éxito.')
             }}
 
 
@@ -124,6 +151,28 @@ class ProductTemplate(models.Model):
                         })
                 
         return response
+    
+
+    @staticmethod
+    def create_odoo_product(product):
+        vals_list = {
+            "name": product.get("name"),
+            "list_price": float(product.get("regular_price")),
+            "description": product.get("description"),
+            "default_code": product.get("sku"),
+            "wc_id": product.get("id"),
+            "wc_permalink": product.get("permalink"),
+            "is_wc_connect": True
+        }
+
+        if product["images"]:
+            vals_list["wc_img_link"] = product.get("images")[0]["src"]
+
+        
+
+
+        return vals_list
+
 
 
 
