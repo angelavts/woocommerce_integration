@@ -5,7 +5,7 @@ from odoo.exceptions import AccessError
 from datetime import date
 from woocommerce import API
 from odoo import api
-from odoo.addons.woocommerce_integration.models.tools import wcapi
+from odoo.addons.woocommerce_integration.models.tools import wcapi, do_request
 
 class ProductTemplate(models.Model):
     _inherit = 'product.template'
@@ -26,7 +26,7 @@ class ProductTemplate(models.Model):
             # para cada producto, revisar si este se encuentra conectado a woocommerce
             if template.is_wc_connect:
                 # crear el producto en woocommerce
-                if not create_wc_product(template):
+                if not template.create_wc_product():
                     raise AccessError(_("Error en la creación del producto, es posible que exista un problema de conexión con woocommerce"))
                     # producto NO creado con exito
                     print("Error en la creación del producto") 
@@ -47,12 +47,13 @@ class ProductTemplate(models.Model):
                     print("Actualizar producto en woocommerce")
                     # en caso de que tenga un id de woocommerce, es porque
                     # ya existe en woocommerce, entonces se hace un PUT
-                    if not update_wc_product(template):
+                    response = do_request('PUT', 'products', template.get_data(), template.wc_id)
+                    if not response:
                         raise AccessError(_("Error en la actualización del producto, es posible que exista un problema de conexión con woocommerce"))
                 else:
                     print("Crear producto en woocommerce")
                     # como el producto aún no está en woocommerce, se crea
-                    if not create_wc_product(template):
+                    if not template.create_wc_product():
                         raise AccessError(_("Error en la creación del producto, es posible que exista un problema de conexión con woocommerce"))
                         # producto NO creado con exito
                         print("Error en la creación del producto") 
@@ -66,27 +67,26 @@ class ProductTemplate(models.Model):
         res = super(ProductTemplate, self).unlink()
         if is_wc_connect and wc_id:
             print("ELIMINARRRRRRRRRR")
-            try:
-                response = wcapi.delete('products/%s' % wc_id, params={'force': True}).json()     
-            except:
-                # posible error de conexión
-                response = False
-            if response:
-                # revisar si existe data en la respuesta, lo cual
-                # es una posible indicación de error  
-                data = response.get('data')
-                if data and data.get('status') != 200:
-                    raise AccessError(_(response.get('message')))
+            do_request('DELETE', 'products', wc_id=wc_id)      
         return res
 
-
+    def get_data(self):
+        # armar estructura con los datos requeridos por woocommerce
+        data_product = {
+            "name": str(self.name),
+            "regular_price": str(self.list_price),
+            "description": str(self.description),
+            'type': 'simple',
+            "sku": str(self.default_code) 
+        }     
+        return data_product
 
     def export_to_woocommerce(self):
         updatedProducts = 0
         productList = self.env['product.template'].search([])
         productList.search([], order='create_date', limit=10)
         for product in productList:
-            if create_wc_product(product, True):
+            if product.create_wc_product(True):
                 updatedProducts += 1
         print(str(updatedProducts) + 'exportados con éxito')
         return {'warning': {
@@ -95,74 +95,38 @@ class ProductTemplate(models.Model):
             }}
 
 
-def create_wc_product(product, ignoreDataStatus=False):
+    def create_wc_product(self, ignoreDataStatus=False):
 
-    data_product = get_data(product)
-    # indicar que se debe manejar el stock
-    data_product["manage_stock"] = "true"
-    # inficar la cantidad de productos
-    data_product["stock_quantity"] = product.qty_available
-    # insertar la imagen en caso de que la tenga
-    if product.wc_img_link:
-        data_product["images"] = [
-            {
-                "src": product.wc_img_link 
-            }
-        ]
-    # realizar la petición post para incluir producto
-    try:
-        response = wcapi.post("products", data_product).json()        
-    except:
-        # posible error de conexión
-        response = False
-    if response:
-        # revisar si existe data en la respuesta, lo cual
-        # es una posible indicación de error  
-        data = response.get('data')
-        if not ignoreDataStatus and data and data.get('status') != 200:
-            raise AccessError(_(response.get('message')))
-        else:
-            product.write({
+        data_product = self.get_data()
+        # indicar que se debe manejar el stock
+        data_product["manage_stock"] = "true"
+        # inficar la cantidad de productos
+        data_product["stock_quantity"] = self.qty_available
+        # insertar la imagen en caso de que la tenga
+        if self.wc_img_link:
+            data_product["images"] = [
+                {
+                    "src": self.wc_img_link 
+                }
+            ]
+        # realizar la petición post para incluir producto
+        response = do_request('POST', 'products', data_product, self.wc_id)        
+        if response:
+            self.write({
                         'wc_id': response.get('id'),
                         'wc_permalink': response.get('permalink')
                     })
             # incluir imagen en caso de que la tenga
             images = response.get('images')
             if images:
-                product.write({
+                self.write({
                             'wc_img_link': images[0]["src"],
                         })
-            
-    return response
+                
+        return response
 
 
-def update_wc_product(product):
 
-    data_product = get_data(product)
-    print(data_product)
-    # realizar la petición put para modificar producto
-    try:
-        response = wcapi.put('products/%s' % product.wc_id, data_product).json()      
-    except:
-        # posible error de conexión
-        response = False
-    if response:
-        # revisar si existe data en la respuesta, lo cual
-        # es una posible indicación de error  
-        data = response.get('data')
-        if data and data.get('status') != 200:
-            raise AccessError(_(response.get('message')))
-            
-    return response
+    
 
 
-def get_data(product):
-    # armar estructura con los datos requeridos por woocommerce
-    data_product = {
-        "name": str(product.name),
-        "regular_price": str(product.list_price),
-        "description": str(product.description),
-        'type': 'simple',
-        "sku": str(product.default_code) 
-    }     
-    return data_product

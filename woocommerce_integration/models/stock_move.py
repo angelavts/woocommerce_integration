@@ -1,6 +1,6 @@
-from odoo import models
+from odoo import models, _
 from odoo.exceptions import AccessError
-from odoo.addons.woocommerce_integration.models.tools import wcapi
+from odoo.addons.woocommerce_integration.models.tools import do_request
 
 class StockMove(models.Model):
     _inherit = "stock.move"
@@ -16,17 +16,7 @@ class StockMove(models.Model):
                     "stock_quantity": str(move.product_tmpl_id.qty_available)
                     }
                 # realizar la petición PUT para actualizar stock de producto
-                try:
-                    response = wcapi.put('products/%s' % move.product_tmpl_id.wc_id, data).json()
-                except:
-                    # posible error de conexión
-                    response = False
-                if response:
-                    # revisar si existe data en la respuesta, lo cual
-                    # es una posible indicación de error
-                    data = response.get('data')
-                    if data and data.get('status') != 200:
-                        raise AccessError(_(response.get('message')))
-                else:
+                response = do_request('PUT', 'products', data, move.product_tmpl_id.wc_id)
+                if not response:
                     raise AccessError(_("No fue posible establecer conexión con WooCommerce"))
         return moves

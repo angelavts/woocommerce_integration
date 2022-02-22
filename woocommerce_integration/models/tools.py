@@ -18,3 +18,25 @@ wcapi = API(
     consumer_secret=LOCAL_SECRET,
     version="wc/v3"
 )
+
+def do_request(request_name, wc_object, data=None, wc_id=""):
+    try:
+        print('{}/{}'.format(wc_object, wc_id))
+        # intentar hacer la petición solicitada
+        if request_name == 'POST':
+            response = wcapi.post(wc_object, data).json() 
+        elif request_name == 'PUT':
+            response = wcapi.put('{}/{}'.format(wc_object, wc_id), data).json() 
+        elif request_name == 'DELETE':            
+            response = wcapi.delete('{}/{}'.format(wc_object, wc_id), params={'force': True}).json()      
+    except:
+        # posible error de conexión
+        response = False
+    if response:
+        # revisar si existe data en la respuesta, lo cual
+        # es una posible indicación de error  
+        data = response.get('data')
+        if data and data.get('status') != 200:
+            raise AccessError(_(response.get('message')))
+            response = False          
+    return response
