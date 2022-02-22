@@ -4,7 +4,6 @@ from odoo import api, fields, models, _
 from odoo.exceptions import AccessError
 from datetime import date
 from woocommerce import API
-from odoo import api
 from odoo.addons.woocommerce_integration.models.tools import do_request
 
 class SaleOrderCustom(models.Model):
