@@ -11,7 +11,7 @@ from odoo.addons.woocommerce_integration.models.tools import wcapi
 class OdooController(http.Controller):
     @http.route('/odoo_controller/odoo_controller/', auth='public')
     def index(self, **kw):
-        return 'Hola Mundo'
+        return '<h1>Hola Mundo</h1>'
 
 
     @http.route('/odoo_controller/odoo_controller/example_products', auth='public')

@@ -38,10 +38,9 @@ def do_request(request_name, wc_object, data=None, wc_id=''):
         # posible error de conexión
         response = False
     if response:
-
+        # si retorna una lista es porque se tienen varios objetos
         if isinstance(response, list):
             return response
-
         # revisar si existe data en la respuesta, lo cual
         # es una posible indicación de error  
         data = response.get('data')

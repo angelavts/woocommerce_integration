@@ -31,7 +31,7 @@ class ProductCategory(models.Model):
 			if category.is_wc_connect:
 				if category.parent_id and not category.parent_id.wc_id:
 					category.parent_id.write({'is_wc_connect': True})
-					category.create_wc()
+				category.create_wc()
 		return category
 
 

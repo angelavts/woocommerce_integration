@@ -12,7 +12,7 @@ class StockMove(models.Model):
                 # actualizar inventario en woocommerce
                 data = {
                     'stock_quantity': str(move.product_tmpl_id.qty_available)
-                    }
+                }
                 # realizar la petición PUT para actualizar stock de producto
                 response = do_request('PUT', 'products', data, move.product_tmpl_id.wc_id)
                 if not response:

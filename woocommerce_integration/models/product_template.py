@@ -54,11 +54,12 @@ class ProductTemplate(models.Model):
 
     def unlink(self):
         # eliminar producto de woocommerce
-        is_wc_connect = self.is_wc_connect
-        wc_id = self.wc_id
-        res = super(ProductTemplate, self).unlink()
-        if is_wc_connect and wc_id:
-            do_request('DELETE', 'products', wc_id=wc_id)      
+        for template in self:
+            is_wc_connect = template.is_wc_connect
+            wc_id = template.wc_id
+            res = super(ProductTemplate, template).unlink()
+            if is_wc_connect and wc_id:
+                do_request('DELETE', 'products', wc_id=wc_id)      
         return res
 
     def get_data(self):
